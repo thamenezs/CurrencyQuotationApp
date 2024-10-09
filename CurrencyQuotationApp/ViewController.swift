@@ -20,6 +20,18 @@ class ViewController: UIViewController {
         return title
     }()
     
+    private lazy var subtittleLabel: UILabel = {
+       let subtitle = UILabel()
+        subtitle.translatesAutoresizingMaskIntoConstraints = false
+        subtitle.text = "Selecione a moeda e a quantidade que será convertida"
+        subtitle.font = UIFont.systemFont(ofSize: 16)
+        subtitle.textColor = UIColor.grayColor
+        subtitle.textAlignment = .center
+        subtitle.numberOfLines = 2
+        return subtitle
+        
+    }()
+        
     override func viewDidLoad() {
             super.viewDidLoad()
             setupView()
@@ -48,8 +60,9 @@ class ViewController: UIViewController {
     }
     
     private func setHierarchy(){
-        view.backgroundColor = .white
+        view.backgroundColor = UIColor.backgroundGray
         view.addSubview(titleLabel)
+        view.addSubview(subtittleLabel)
     }
     
     private func setConstraints(){
@@ -57,7 +70,11 @@ class ViewController: UIViewController {
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 65),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 100),
+            
+            subtittleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 15),
+            subtittleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            subtittleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
     }
 
