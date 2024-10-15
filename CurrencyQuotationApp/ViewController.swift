@@ -7,8 +7,9 @@
 
 import UIKit
 
-class ViewController: UIViewController {
-
+class ViewController: UIViewController, UITextFieldDelegate {
+    
+    
     
     private lazy var titleLabel:UILabel = {
         let title = UILabel()
@@ -46,7 +47,8 @@ class ViewController: UIViewController {
     private lazy var converterValueStackView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [anthemImage,
                                                        countryLabel,
-                                                       setValueLabel])
+                                                       setValueLabel
+                                                    ])
         stackView.axis = .horizontal
         stackView.spacing = 20
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -79,13 +81,15 @@ class ViewController: UIViewController {
         return label
     }()
     
-    private lazy var setValueLabel: UILabel = {
-        let label = UILabel()
-         label.text = "1000"
-        label.font = UIFont.systemFont(ofSize: 32, weight: .semibold)
-         label.textColor = UIColor.darkGray
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+    private lazy var setValueLabel: UITextField = {
+        let textField = UITextField()
+        textField.borderStyle = .none
+            textField.placeholder = "1"
+            textField.delegate = self
+            textField.keyboardType = .decimalPad
+            textField.backgroundColor = .clear
+            textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
     }()
         
     private lazy var convertedValueStackView: UIStackView = {
@@ -139,13 +143,69 @@ class ViewController: UIViewController {
         separator.translatesAutoresizingMaskIntoConstraints = false
         return separator
     }()
+    
+    private lazy var countriesCollectionView: UICollectionView = {
+            let layout = UICollectionViewFlowLayout()
+            layout.scrollDirection = .horizontal
+            layout.itemSize = CGSize(width: 136, height: 104)
+            layout.sectionInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+            collectionView.translatesAutoresizingMaskIntoConstraints = false
+            collectionView.backgroundColor = .clear
+            collectionView.dataSource = self
+            collectionView.register(CountriesCollectionViewCell.self, forCellWithReuseIdentifier: CountriesCollectionViewCell.identifier)
+        collectionView.allowsSelection = true
+            return collectionView
+        }()
+    
+    
+    private lazy var indicateLabel: UILabel = {
+       let label = UILabel()
+        label.text = "Valor indicativo"
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textColor = UIColor.grayColor
+        return label
+    }()
+    
+    private lazy var indicateValueLabel: UILabel = {
+       let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textColor = UIColor.black
+        return label
+    }()
+    
+    private var dolarToReal: String?
+
+    private let service = Service()
+
+    private var currencyResponse: CurrencyResponse?
         
     override func viewDidLoad() {
             super.viewDidLoad()
             setupView()
+            fetchData()
 
         }
+    
+    private func fetchData(){
+        service.fetchData() { [weak self] response in
+            self?.currencyResponse = response
+            DispatchQueue.main.async{
+                self?.loadData()
+            }
+            
+        }
+    }
         
+    private func loadData(){
+        if let usDollarData = currencyResponse?["USDBRL"] {
+            dolarToReal = usDollarData.bid
+            indicateValueLabel.text = "1 USD = \(dolarToReal ?? "N/A") BRL"
+        }
+        countriesCollectionView.reloadData()
+    }
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
         }
@@ -162,6 +222,8 @@ class ViewController: UIViewController {
             super.viewWillDisappear(animated)
         }
     
+    
+    
     private func setupView(){
         setHierarchy()
         setConstraints()
@@ -173,7 +235,12 @@ class ViewController: UIViewController {
         view.addSubview(subtittleLabel)
         view.addSubview(valuesStackView)
         view.addSubview(separator)
+        view.addSubview(countriesCollectionView)
+        view.addSubview(indicateLabel)
+        view.addSubview(indicateValueLabel)
     }
+    
+    
     
     private func setConstraints() {
         NSLayoutConstraint.activate([
@@ -222,10 +289,75 @@ class ViewController: UIViewController {
             convertedValueStackView.topAnchor.constraint(equalTo: valueRealTitle.bottomAnchor, constant: 14),
             convertedValueStackView.leadingAnchor.constraint(equalTo: valuesStackView.leadingAnchor, constant: 16),
             convertedValueStackView.trailingAnchor.constraint(equalTo: valuesStackView.trailingAnchor, constant: -16),
+            
+            countriesCollectionView.topAnchor.constraint(equalTo: valuesStackView.bottomAnchor, constant: 24),
+                    countriesCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+                    countriesCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+                    countriesCollectionView.heightAnchor.constraint(equalToConstant: 120),
+            
+            indicateLabel.heightAnchor.constraint(equalToConstant: 19),
+            indicateLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -70),
+            indicateLabel.leadingAnchor.constraint(equalTo: valuesStackView.leadingAnchor),
+            
+            indicateValueLabel.heightAnchor.constraint(equalToConstant: 21),
+            indicateValueLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -35),
+            indicateValueLabel.leadingAnchor.constraint(equalTo: valuesStackView.leadingAnchor),
         ])
     }
 
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if let text = textField.text, let value = Double(text) {
+            print("Valor digitado: \(value)")
+        }
+    }
 
 
 }
 
+extension ViewController: UICollectionViewDataSource {
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        currencyResponse?.count ?? 0
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CountriesCollectionViewCell.identifier, for: indexPath) as? CountriesCollectionViewCell else {
+            return UICollectionViewCell()
+        }
+        
+        guard let currencyResponse else {
+            return cell
+        }
+        let currencyKeys = Array(currencyResponse.keys)
+        
+        guard indexPath.item < currencyKeys.count else {
+            return cell
+        }
+        
+        let currencyKey = currencyKeys[indexPath.item]
+        let currencyData = currencyResponse[currencyKey]
+        let originalName = currencyData?.name ?? ""
+        let shortName = originalName.split(separator: "/").first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? originalName
+        let countryName: String?
+        let countryImage: String?
+        
+        switch shortName {
+        case "Euro":
+            countryName = "EUR"
+            countryImage = "eur"
+            
+        case "Dólar Americano":
+            countryName = "USD"
+            countryImage = "usd"
+        
+        case "Peso Argentino":
+            countryName = "ARS"
+            countryImage = "ars"
+        default:
+            countryName = "BRL"
+            countryImage = "brl"
+        }
+        cell.loadData(coinName: shortName, countryImage: countryImage, countryName: countryName)
+        return cell
+    }
+}
