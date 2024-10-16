@@ -299,11 +299,10 @@ class ViewController: UIViewController, UITextFieldDelegate {
     func formatNumberToDecimal(value:Double) -> String {
         let numberFormatter = NumberFormatter()
 
-        // Atribuindo o locale desejado
         numberFormatter.locale = Locale(identifier: "pt_BR")
 
-        // Importante para que sejam exibidas as duas casas após a vírgula
         numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
 
         numberFormatter.numberStyle = .decimal
 
@@ -380,14 +379,15 @@ extension ViewController: UICollectionViewDelegate {
             
             self.coin = shortName
             self.coinToReal = Double(bidValue)
-            
-            let newValue = "1 \(coin ?? "") = \(bidValue) BRL"
+            let doubleBid = formatNumberToDecimal(value: Double(bidValue) ?? 0)
+            let newValue = "1 \(coin ?? "") = \(doubleBid) BRL"
             self.indicateValueLabel.text = newValue
             
             let (newCountryView, _) = countryConverterView.createCountryView(image: shortName.lowercased(), name: shortName)
             countryView.removeFromSuperview()
             converterValueStackView.insertArrangedSubview(newCountryView, at: 0)
             countryView = newCountryView
+            
             
         }
     }
