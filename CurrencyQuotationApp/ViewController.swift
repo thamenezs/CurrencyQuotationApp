@@ -9,6 +9,10 @@ import UIKit
 
 class ViewController: UIViewController, UITextFieldDelegate {
     
+    private var countryConverterView: UIView = UIView()
+    private var countryConvertedView: UIView = UIView()
+    private var countryView: UIView!
+    private var countryLabel: UILabel!
     
     
     private lazy var titleLabel:UILabel = {
@@ -45,10 +49,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
         }()
     
     private lazy var converterValueStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [anthemImage,
-                                                       countryLabel,
-                                                       setValueLabel
-                                                    ])
+        let stackView = UIStackView()
         stackView.axis = .horizontal
         stackView.spacing = 20
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -64,22 +65,6 @@ class ViewController: UIViewController, UITextFieldDelegate {
         return label
     }()
     
-    private lazy var anthemImage: UIImageView = {
-       let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = UIImage(named: "sgd")
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-    
-    private lazy var countryLabel: UILabel = {
-       let label = UILabel()
-        label.text = "SGD"
-        label.font = UIFont.systemFont(ofSize: 20, weight: .medium)
-        label.textColor = UIColor.purpleColor
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
     
     private lazy var setValueLabel: UITextField = {
         let textField = UITextField()
@@ -93,8 +78,8 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }()
         
     private lazy var convertedValueStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [brazilImage,
-                                                       realLabel,
+        let (brazilView, _) = countryConvertedView.createCountryView(image: "brazilAnthem", name: "BRL")
+        let stackView = UIStackView(arrangedSubviews: [brazilView,
                                                        valueRealLabel])
         stackView.axis = .horizontal
         stackView.spacing = 16
@@ -111,26 +96,9 @@ class ViewController: UIViewController, UITextFieldDelegate {
         return label
     }()
     
-    private lazy var brazilImage: UIImageView = {
-       let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = UIImage(named: "brazilAnthem")
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-    
-    private lazy var realLabel: UILabel = {
-       let label = UILabel()
-        label.text = "BRL"
-        label.font = UIFont.systemFont(ofSize: 20, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.textColor = UIColor.purpleColor
-        return label
-    }()
     
     private lazy var valueRealLabel: UILabel = {
         let label = UILabel()
-        label.text = "736.70"
         label.font = UIFont.systemFont(ofSize: 32, weight: .semibold)
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = UIColor.darkGray
@@ -170,13 +138,15 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
     private lazy var indicateValueLabel: UILabel = {
        let label = UILabel()
+        label.text = "Selecione uma moeda para exibir"
         label.font = UIFont.systemFont(ofSize: 18, weight: .medium)
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.textColor = UIColor.black
+        label.textColor = UIColor.backgroundBlue
         return label
     }()
     
-    private var dolarToReal: String?
+    private var coinToReal: Double?
+    private var coin: String?
 
     private let service = Service()
 
@@ -186,8 +156,32 @@ class ViewController: UIViewController, UITextFieldDelegate {
             super.viewDidLoad()
             setupView()
             fetchData()
+        
+        let (initialCountryView, initialCountryLabel) = countryConverterView.createCountryView(image: "usd", name: "USD")
+        countryView = initialCountryView
+        countryLabel = initialCountryLabel
+        
+        converterValueStackView.addArrangedSubview(countryView)
+        converterValueStackView.addArrangedSubview(setValueLabel)
+        countriesCollectionView.delegate = self
+        
+        setValueLabel.addTarget(self, action: #selector(textFielDidChange(_:)), for: .editingChanged)
 
         }
+    
+    @objc func textFielDidChange(_ textField: UITextField){
+        updateConvertedValue()
+    }
+    
+    private func updateConvertedValue(){
+        guard let valueText = setValueLabel.text, let value = Double(valueText), let bid = coinToReal else {
+            valueRealLabel.text = "0.00"
+            return
+        }
+        
+        let convertedValue = formatNumberToDecimal(value: (value * bid))
+        valueRealLabel.text = String(convertedValue)
+    }
     
     private func fetchData(){
         service.fetchData() { [weak self] response in
@@ -200,10 +194,6 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }
         
     private func loadData(){
-        if let usDollarData = currencyResponse?["USDBRL"] {
-            dolarToReal = usDollarData.bid
-            indicateValueLabel.text = "1 USD = \(dolarToReal ?? "N/A") BRL"
-        }
         countriesCollectionView.reloadData()
     }
         override func viewDidAppear(_ animated: Bool) {
@@ -261,12 +251,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
             valuesStackView.widthAnchor.constraint(equalToConstant: 320),
             valuesStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             valuesStackView.topAnchor.constraint(equalTo: subtittleLabel.bottomAnchor, constant: 40),
-
-            // Constraints das imagens
-            brazilImage.heightAnchor.constraint(equalToConstant: 45),
-            brazilImage.widthAnchor.constraint(equalToConstant: 45),
-            anthemImage.heightAnchor.constraint(equalToConstant: 45),
-            anthemImage.widthAnchor.constraint(equalToConstant: 45),
+            
 
             // Constraints do separador (dentro da stack)
             separator.heightAnchor.constraint(equalToConstant: 1),
@@ -307,8 +292,22 @@ class ViewController: UIViewController, UITextFieldDelegate {
 
     func textFieldDidEndEditing(_ textField: UITextField) {
         if let text = textField.text, let value = Double(text) {
-            print("Valor digitado: \(value)")
+            updateConvertedValue()
         }
+    }
+    
+    func formatNumberToDecimal(value:Double) -> String {
+        let numberFormatter = NumberFormatter()
+
+        // Atribuindo o locale desejado
+        numberFormatter.locale = Locale(identifier: "pt_BR")
+
+        // Importante para que sejam exibidas as duas casas após a vírgula
+        numberFormatter.minimumFractionDigits = 2
+
+        numberFormatter.numberStyle = .decimal
+
+        return numberFormatter.string(from: NSNumber(value:value)) ?? "Valor indefinido"
     }
 
 
@@ -359,5 +358,37 @@ extension ViewController: UICollectionViewDataSource {
         }
         cell.loadData(coinName: shortName, countryImage: countryImage, countryName: countryName)
         return cell
+    }
+    
+}
+
+extension ViewController: UICollectionViewDelegate {
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let currencyResponse = currencyResponse else {return}
+        
+        let currencyKeys = Array(currencyResponse.keys)
+        
+        guard indexPath.item < currencyKeys.count else {return}
+        
+        let selectedCurrencyKey = currencyKeys[indexPath.item]
+        
+        if let selectedCurrency = currencyResponse[selectedCurrencyKey]{
+            
+            let bidValue = selectedCurrency.bid
+            let shortName = selectedCurrency.code
+            
+            self.coin = shortName
+            self.coinToReal = Double(bidValue)
+            
+            let newValue = "1 \(coin ?? "") = \(bidValue) BRL"
+            self.indicateValueLabel.text = newValue
+            
+            let (newCountryView, _) = countryConverterView.createCountryView(image: shortName.lowercased(), name: shortName)
+            countryView.removeFromSuperview()
+            converterValueStackView.insertArrangedSubview(newCountryView, at: 0)
+            countryView = newCountryView
+            
+        }
     }
 }

@@ -13,4 +13,5 @@ extension UIColor{
     static let grayColor = UIColor(named: "grayColor")
     static let brackgroundGray = UIColor(named: "backgroundGray")
     static let darkGray = UIColor(named: "darkGray")
+    static let backgroundBlue = UIColor(named: "darkBlue")
 }
