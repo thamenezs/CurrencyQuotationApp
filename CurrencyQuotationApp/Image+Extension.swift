@@ -10,7 +10,7 @@ import UIKit
 
 extension UIView {
     
-    func createCountryView(image: String, name: String) -> UIView{
+    public func createCountryView(image: String, name: String) -> (view: UIView, label: UILabel){
         
           let anthemImage: UIImageView = {
            let imageView = UIImageView()
@@ -40,6 +40,6 @@ extension UIView {
             anthemImage.widthAnchor.constraint(equalToConstant: 45)
         ])
         
-        return stackView
+        return (stackView, countryLabel)
     }
 }
