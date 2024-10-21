@@ -26,7 +26,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }()
     
     private lazy var subtittleLabel: UILabel = {
-       let subtitle = UILabel()
+        let subtitle = UILabel()
         subtitle.translatesAutoresizingMaskIntoConstraints = false
         subtitle.text = "Selecione a moeda e a quantidade que será convertida"
         subtitle.font = UIFont.systemFont(ofSize: 16)
@@ -38,15 +38,15 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }()
     
     private lazy var valuesStackView: UIStackView = {
-            let stackView = UIStackView(arrangedSubviews: [valueTitle, converterValueStackView, valueRealTitle, convertedValueStackView])
-            stackView.axis = .vertical
+        let stackView = UIStackView(arrangedSubviews: [valueTitle, converterValueStackView, valueRealTitle, convertedValueStackView])
+        stackView.axis = .vertical
         stackView.spacing = 16
-            stackView.translatesAutoresizingMaskIntoConstraints = false
-            stackView.backgroundColor = UIColor.white
-            stackView.layer.cornerRadius = 20
-            stackView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16)
-            return stackView
-        }()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.backgroundColor = UIColor.white
+        stackView.layer.cornerRadius = 20
+        stackView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16)
+        return stackView
+    }()
     
     private lazy var converterValueStackView: UIStackView = {
         let stackView = UIStackView()
@@ -69,14 +69,16 @@ class ViewController: UIViewController, UITextFieldDelegate {
     private lazy var setValueLabel: UITextField = {
         let textField = UITextField()
         textField.borderStyle = .none
-            textField.placeholder = "1"
-            textField.delegate = self
-            textField.keyboardType = .decimalPad
-            textField.backgroundColor = .clear
-            textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.delegate = self
+        textField.keyboardType = .decimalPad
+        textField.backgroundColor = UIColor.lightGray
+        textField.layer.cornerRadius = 7
+        textField.font = UIFont.systemFont(ofSize: 22, weight: .semibold)
+        textField.textAlignment = .right
+        textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
-        
+    
     private lazy var convertedValueStackView: UIStackView = {
         let (brazilView, _) = countryConvertedView.createCountryView(image: "brazilAnthem", name: "BRL")
         let stackView = UIStackView(arrangedSubviews: [brazilView,
@@ -106,29 +108,29 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }()
     
     private lazy var separator: UIView = {
-       let separator = UIView()
+        let separator = UIView()
         separator.backgroundColor = UIColor.grayColor
         separator.translatesAutoresizingMaskIntoConstraints = false
         return separator
     }()
     
     private lazy var countriesCollectionView: UICollectionView = {
-            let layout = UICollectionViewFlowLayout()
-            layout.scrollDirection = .horizontal
-            layout.itemSize = CGSize(width: 136, height: 104)
-            layout.sectionInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
-            let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-            collectionView.translatesAutoresizingMaskIntoConstraints = false
-            collectionView.backgroundColor = .clear
-            collectionView.dataSource = self
-            collectionView.register(CountriesCollectionViewCell.self, forCellWithReuseIdentifier: CountriesCollectionViewCell.identifier)
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.itemSize = CGSize(width: 136, height: 104)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.backgroundColor = .clear
+        collectionView.dataSource = self
+        collectionView.register(CountriesCollectionViewCell.self, forCellWithReuseIdentifier: CountriesCollectionViewCell.identifier)
         collectionView.allowsSelection = true
-            return collectionView
-        }()
+        return collectionView
+    }()
     
     
     private lazy var indicateLabel: UILabel = {
-       let label = UILabel()
+        let label = UILabel()
         label.text = "Valor indicativo"
         label.font = UIFont.systemFont(ofSize: 16)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -137,8 +139,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }()
     
     private lazy var indicateValueLabel: UILabel = {
-       let label = UILabel()
-        label.text = "Selecione uma moeda para exibir"
+        let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 18, weight: .medium)
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = UIColor.backgroundBlue
@@ -147,27 +148,24 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
     private var coinToReal: Double?
     private var coin: String?
-
+    
     private let service = Service()
-
+    
     private var currencyResponse: CurrencyResponse?
-        
+    
     override func viewDidLoad() {
-            super.viewDidLoad()
-            setupView()
-            fetchData()
+        super.viewDidLoad()
+        setupView()
+        fetchData()
         
-        let (initialCountryView, initialCountryLabel) = countryConverterView.createCountryView(image: "usd", name: "USD")
-        countryView = initialCountryView
-        countryLabel = initialCountryLabel
-        
-        converterValueStackView.addArrangedSubview(countryView)
         converterValueStackView.addArrangedSubview(setValueLabel)
         countriesCollectionView.delegate = self
+        countriesCollectionView.dataSource = self
         
+        setValueLabel.text = "1"
         setValueLabel.addTarget(self, action: #selector(textFielDidChange(_:)), for: .editingChanged)
-
-        }
+        
+    }
     
     @objc func textFielDidChange(_ textField: UITextField){
         updateConvertedValue()
@@ -188,29 +186,40 @@ class ViewController: UIViewController, UITextFieldDelegate {
             self?.currencyResponse = response
             DispatchQueue.main.async{
                 self?.loadData()
+                self?.selectFirst()
             }
             
         }
     }
+    
+    private func selectFirst(){
+        guard let currencyResponse = currencyResponse, !currencyResponse.isEmpty else {return}
         
+        let firstIndex = IndexPath(item: 0, section: 0)
+        
+        countriesCollectionView.selectItem(at: firstIndex, animated: false, scrollPosition: .top)
+        
+        collectionView(countriesCollectionView, didSelectItemAt: firstIndex)
+    }
+    
     private func loadData(){
         countriesCollectionView.reloadData()
     }
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-        }
-
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-        }
-        
-        override func viewDidDisappear(_ animated: Bool) {
-            super.viewDidDisappear(animated)
-        }
-        
-        override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-        }
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+    }
     
     
     
@@ -252,22 +261,23 @@ class ViewController: UIViewController, UITextFieldDelegate {
             valuesStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             valuesStackView.topAnchor.constraint(equalTo: subtittleLabel.bottomAnchor, constant: 40),
             
-
             // Constraints do separador (dentro da stack)
             separator.heightAnchor.constraint(equalToConstant: 1),
             separator.leadingAnchor.constraint(equalTo: valuesStackView.leadingAnchor, constant: 10),
             separator.trailingAnchor.constraint(equalTo: valuesStackView.trailingAnchor, constant: -10),
-
+            
             // Constraints das stacks internas de converter
             valueTitle.heightAnchor.constraint(equalToConstant: 18),
             valueTitle.topAnchor.constraint(equalTo: valuesStackView.topAnchor, constant: 20),
             converterValueStackView.topAnchor.constraint(equalTo: valueTitle.bottomAnchor, constant: 14),
             converterValueStackView.leadingAnchor.constraint(equalTo: valuesStackView.leadingAnchor, constant: 16),
             converterValueStackView.trailingAnchor.constraint(equalTo: valuesStackView.trailingAnchor, constant: -16),
+            setValueLabel.widthAnchor.constraint(equalToConstant: 140),
+            setValueLabel.heightAnchor.constraint(equalToConstant: 45),
             
             // Constraints para o separador
             separator.topAnchor.constraint(equalTo: converterValueStackView.bottomAnchor, constant: 30),
-
+            
             // Constraints das stacks internas de valor em real
             valueRealTitle.heightAnchor.constraint(equalToConstant: 18),
             valueRealTitle.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 30),
@@ -276,9 +286,9 @@ class ViewController: UIViewController, UITextFieldDelegate {
             convertedValueStackView.trailingAnchor.constraint(equalTo: valuesStackView.trailingAnchor, constant: -16),
             
             countriesCollectionView.topAnchor.constraint(equalTo: valuesStackView.bottomAnchor, constant: 24),
-                    countriesCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-                    countriesCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-                    countriesCollectionView.heightAnchor.constraint(equalToConstant: 120),
+            countriesCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            countriesCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            countriesCollectionView.heightAnchor.constraint(equalToConstant: 120),
             
             indicateLabel.heightAnchor.constraint(equalToConstant: 19),
             indicateLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -70),
@@ -289,27 +299,66 @@ class ViewController: UIViewController, UITextFieldDelegate {
             indicateValueLabel.leadingAnchor.constraint(equalTo: valuesStackView.leadingAnchor),
         ])
     }
-
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
-        if let text = textField.text, let value = Double(text) {
+        var text = textField.text
+        let newText = formatNumberToDecimal(value: Double(text ?? "0") ?? 00)
+        if let textField = text, var _ = Double(textField) {
+            text = String(newText)
             updateConvertedValue()
         }
     }
     
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+
+              let formatter = NumberFormatter()
+              formatter.locale = Locale(identifier: "pt_BR")
+              formatter.usesGroupingSeparator = true
+              formatter.numberStyle = NumberFormatter.Style.decimal
+              formatter.maximumFractionDigits = 6
+              formatter.decimalSeparator = "."
+              formatter.groupingSeparator = ","
+              
+              let completeString = textField.text!.replacingOccurrences(of: formatter.groupingSeparator, with: "") + string
+
+              var backSpace = false
+              
+              if let char = string.cString(using: String.Encoding.utf8) {
+                  let isBackSpace = strcmp(char, "\\b")
+                  if (isBackSpace == -92) {
+                      backSpace = true
+                  }
+              }
+              if string == "" && backSpace {
+                  return true
+              }
+              if string == "-" && textField.text! == "" {
+                  return true
+              }
+
+              guard let value = Double(completeString) else { return false }
+              
+              let formattedNumber = formatter.string(from: NSNumber(value: value)) ?? ""
+              textField.text = formattedNumber
+              return string == formatter.decimalSeparator
+         }
+    
     func formatNumberToDecimal(value:Double) -> String {
         let numberFormatter = NumberFormatter()
-
+        
         numberFormatter.locale = Locale(identifier: "pt_BR")
-
+        
         numberFormatter.minimumFractionDigits = 2
-        numberFormatter.maximumFractionDigits = 2
-
+        numberFormatter.maximumFractionDigits = 3
+        
         numberFormatter.numberStyle = .decimal
-
+        
         return numberFormatter.string(from: NSNumber(value:value)) ?? "Valor indefinido"
     }
-
-
+    
+    
+    
+    
 }
 
 extension ViewController: UICollectionViewDataSource {
@@ -347,7 +396,7 @@ extension ViewController: UICollectionViewDataSource {
         case "Dólar Americano":
             countryName = "USD"
             countryImage = "usd"
-        
+            
         case "Peso Argentino":
             countryName = "ARS"
             countryImage = "ars"
@@ -356,6 +405,10 @@ extension ViewController: UICollectionViewDataSource {
             countryImage = "brl"
         }
         cell.loadData(coinName: shortName, countryImage: countryImage, countryName: countryName)
+        
+        let inde = IndexPath(item: 0, section: 0)
+        
+        collectionView.selectItem(at: inde, animated: false, scrollPosition: .left)
         return cell
     }
     
@@ -372,6 +425,7 @@ extension ViewController: UICollectionViewDelegate {
         
         let selectedCurrencyKey = currencyKeys[indexPath.item]
         
+        
         if let selectedCurrency = currencyResponse[selectedCurrencyKey]{
             
             let bidValue = selectedCurrency.bid
@@ -384,11 +438,11 @@ extension ViewController: UICollectionViewDelegate {
             self.indicateValueLabel.text = newValue
             
             let (newCountryView, _) = countryConverterView.createCountryView(image: shortName.lowercased(), name: shortName)
-            countryView.removeFromSuperview()
+            countryView?.removeFromSuperview()
             converterValueStackView.insertArrangedSubview(newCountryView, at: 0)
             countryView = newCountryView
             
-            
+            updateConvertedValue()
         }
     }
 }
