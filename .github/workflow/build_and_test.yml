@@ -1,9 +1,9 @@
 name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: 
-pull_requests: 
-branches:
-- main
+pull_request: 
+  branches:
+    - main
 jobs:
   Explore-GitHub-Actions:
     runs-on: macos-latest
@@ -24,4 +24,4 @@ jobs:
 
       - name: Run tests
         run: cd CurrencyQuotationApp/; fastlane tests
-      
+
