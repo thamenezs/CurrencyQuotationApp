@@ -6,7 +6,7 @@ pull_request:
 jobs:
   build:
     runs-on: macos-latest
-    
+
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -24,4 +24,3 @@ jobs:
 
       - name: Run tests
         run: cd CurrencyQuotationApp/; fastlane tests
-
