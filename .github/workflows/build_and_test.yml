@@ -1,11 +1,10 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+name: Build and test
+
 on: 
-pull_request: 
-  branches:
-    - main
+pull_request:
+    branches: [ "main" ]
 jobs:
-  Explore-GitHub-Actions:
+  build:
     runs-on: macos-latest
     steps:
       - name: Check out repository code
@@ -17,7 +16,7 @@ jobs:
       - name: Set up Ruby 
       uses: ruby/setup-ruby@v1
       with: 
-        ruby-version: 3.0.2
+        ruby-version: 2.6.10
 
       - name: Install fastlane
         run: gem install fastlane
