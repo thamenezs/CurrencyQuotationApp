@@ -146,7 +146,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
         return label
     }()
     
-    private var coinToReal: Double?
+    private var coinToReal: Decimal?
     private var coin: String?
     
     private let service = Service()
@@ -172,13 +172,15 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }
     
     private func updateConvertedValue(){
-        guard let valueText = setValueLabel.text, let value = Double(valueText), let bid = coinToReal else {
+        guard let valueText = setValueLabel.text, 
+                let value = Decimal(string: valueText),
+                let bid = coinToReal else {
             valueRealLabel.text = "0.00"
             return
         }
         
-        let convertedValue = formatNumberToDecimal(value: (value * bid))
-        valueRealLabel.text = String(convertedValue)
+        let convertedValue = value * bid
+        valueRealLabel.text = formatNumberToDecimal(value: convertedValue)
     }
     
     private func fetchData(){
@@ -301,59 +303,24 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        var text = textField.text
-        let newText = formatNumberToDecimal(value: Double(text ?? "0") ?? 00)
-        if let textField = text, var _ = Double(textField) {
-            text = String(newText)
+        if let text = textField.text, let value = Double(text) {
             updateConvertedValue()
         }
     }
     
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
 
-              let formatter = NumberFormatter()
-              formatter.locale = Locale(identifier: "pt_BR")
-              formatter.usesGroupingSeparator = true
-              formatter.numberStyle = NumberFormatter.Style.decimal
-              formatter.maximumFractionDigits = 6
-              formatter.decimalSeparator = "."
-              formatter.groupingSeparator = ","
-              
-              let completeString = textField.text!.replacingOccurrences(of: formatter.groupingSeparator, with: "") + string
-
-              var backSpace = false
-              
-              if let char = string.cString(using: String.Encoding.utf8) {
-                  let isBackSpace = strcmp(char, "\\b")
-                  if (isBackSpace == -92) {
-                      backSpace = true
-                  }
-              }
-              if string == "" && backSpace {
-                  return true
-              }
-              if string == "-" && textField.text! == "" {
-                  return true
-              }
-
-              guard let value = Double(completeString) else { return false }
-              
-              let formattedNumber = formatter.string(from: NSNumber(value: value)) ?? ""
-              textField.text = formattedNumber
-              return string == formatter.decimalSeparator
-         }
     
-    func formatNumberToDecimal(value:Double) -> String {
+    func formatNumberToDecimal(value:Decimal) -> String {
         let numberFormatter = NumberFormatter()
         
         numberFormatter.locale = Locale(identifier: "pt_BR")
         
         numberFormatter.minimumFractionDigits = 2
-        numberFormatter.maximumFractionDigits = 3
+        numberFormatter.maximumFractionDigits = 2
         
         numberFormatter.numberStyle = .decimal
         
-        return numberFormatter.string(from: NSNumber(value:value)) ?? "Valor indefinido"
+        return numberFormatter.string(from: value as NSNumber) ?? "Valor indefinido"
     }
     
     
@@ -432,9 +399,10 @@ extension ViewController: UICollectionViewDelegate {
             let shortName = selectedCurrency.code
             
             self.coin = shortName
-            self.coinToReal = Double(bidValue)
-            let doubleBid = formatNumberToDecimal(value: Double(bidValue) ?? 0)
-            let newValue = "1 \(coin ?? "") = \(doubleBid) BRL"
+            if let bidValue = Decimal(string: selectedCurrency.bid) {
+                self.coinToReal = bidValue
+            }
+            let newValue = "1 \(coin ?? "") = \(bidValue) BRL"
             self.indicateValueLabel.text = newValue
             
             let (newCountryView, _) = countryConverterView.createCountryView(image: shortName.lowercased(), name: shortName)
